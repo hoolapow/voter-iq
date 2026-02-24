@@ -103,7 +103,7 @@ create table if not exists public.recommendations (
   contest_id uuid references public.ballot_contests(id) on delete cascade not null,
   recommendation text not null,
   reasoning text not null,
-  references jsonb,           -- [{title, url, summary}]
+  sources jsonb,              -- [{title, url, summary}]
   key_factors jsonb,          -- string[]
   created_at timestamptz not null default now(),
   unique(user_id, contest_id)

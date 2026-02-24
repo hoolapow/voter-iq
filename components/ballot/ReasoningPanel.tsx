@@ -10,7 +10,7 @@ interface ReasoningPanelProps {
 export function ReasoningPanel({ recommendation }: ReasoningPanelProps) {
   const [open, setOpen] = useState(false)
 
-  const references = recommendation.references as Reference[] | null
+  const references = recommendation.sources as Reference[] | null
   const keyFactors = recommendation.key_factors as string[] | null
 
   return (

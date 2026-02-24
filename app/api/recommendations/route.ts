@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
       contest_id,
       recommendation: generated.recommendation,
       reasoning: generated.reasoning,
-      references: (generated.references ?? null) as Json | null,
+      sources: (generated.sources ?? null) as Json | null,
       key_factors: (generated.key_factors ?? null) as Json | null,
     })
     .select()

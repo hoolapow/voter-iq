@@ -41,7 +41,7 @@ export interface Recommendation {
   contest_id: string
   recommendation: string
   reasoning: string
-  references: Reference[] | null
+  sources: Reference[] | null
   key_factors: string[] | null
   created_at: string
 }

@@ -88,7 +88,7 @@ Analyze this contest and produce a recommendation that aligns with this voter's 
 {
   "recommendation": "string — one clear recommendation (e.g., 'Vote YES', 'Vote for Candidate Name', 'Vote NO')",
   "reasoning": "string — 3-4 paragraphs explaining why this aligns with the voter's values, including honest tradeoffs",
-  "references": [
+  "sources": [
     {
       "title": "string — source title",
       "url": "string — real URL if known, otherwise descriptive placeholder",
@@ -125,7 +125,7 @@ export async function generateRecommendation(
   let parsed: {
     recommendation: string
     reasoning: string
-    references: { title: string; url: string; summary: string }[]
+    sources: { title: string; url: string; summary: string }[]
     key_factors: string[]
   }
 
@@ -138,7 +138,7 @@ export async function generateRecommendation(
   return {
     recommendation: parsed.recommendation,
     reasoning: parsed.reasoning,
-    references: parsed.references ?? null,
+    sources: parsed.sources ?? null,
     key_factors: parsed.key_factors ?? null,
   }
 }

@@ -215,7 +215,7 @@ export interface Database {
           contest_id: string
           recommendation: string
           reasoning: string
-          references: Json | null
+          sources: Json | null
           key_factors: Json | null
           created_at: string
         }
@@ -225,14 +225,14 @@ export interface Database {
           contest_id: string
           recommendation: string
           reasoning: string
-          references?: Json | null
+          sources?: Json | null
           key_factors?: Json | null
           created_at?: string
         }
         Update: {
           recommendation?: string
           reasoning?: string
-          references?: Json | null
+          sources?: Json | null
           key_factors?: Json | null
         }
         Relationships: []
