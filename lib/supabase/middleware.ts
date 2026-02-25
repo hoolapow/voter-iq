@@ -90,6 +90,7 @@ export async function updateSession(request: NextRequest) {
     }
 
     // Logged in + survey route → enforce funnel order
+    // If both surveys are done, allow access to either page (retake mode)
     if (pathname.startsWith('/survey')) {
       if (!demoDone && pathname !== '/survey/demographic') {
         url.pathname = '/survey/demographic'
@@ -99,10 +100,7 @@ export async function updateSession(request: NextRequest) {
         url.pathname = '/survey/values'
         return NextResponse.redirect(url)
       }
-      if (demoDone && valuesDone) {
-        url.pathname = '/dashboard'
-        return NextResponse.redirect(url)
-      }
+      // Both done: allow access for retakes — do NOT redirect to dashboard
     }
   }
 

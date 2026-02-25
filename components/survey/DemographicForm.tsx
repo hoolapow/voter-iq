@@ -17,15 +17,18 @@ import {
   HEALTH_INSURANCES,
 } from '@/lib/types/survey.types'
 
+const selectField = (msg = 'Required') =>
+  z.string().min(1, msg).optional().default('')
+
 const schema = z.object({
-  income_range: z.string().min(1, 'Required'),
-  employment_status: z.string().min(1, 'Required'),
-  education_level: z.string().min(1, 'Required'),
+  income_range: selectField(),
+  employment_status: selectField(),
+  education_level: selectField(),
   children_count: z.number().min(0).max(20),
   household_size: z.number().min(1).max(20),
-  home_ownership: z.string().min(1, 'Required'),
-  marital_status: z.string().min(1, 'Required'),
-  health_insurance: z.string().min(1, 'Required'),
+  home_ownership: selectField(),
+  marital_status: selectField(),
+  health_insurance: selectField(),
   military_service: z.boolean(),
   union_member: z.boolean(),
 })
@@ -36,7 +39,12 @@ type FormValues = z.infer<typeof schema>
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const resolver = zodResolver(schema) as any
 
-export function DemographicForm() {
+interface DemographicFormProps {
+  isRetake?: boolean
+  initialValues?: Partial<FormValues>
+}
+
+export function DemographicForm({ isRetake = false, initialValues }: DemographicFormProps) {
   const router = useRouter()
   const [serverError, setServerError] = useState<string | null>(null)
 
@@ -48,10 +56,16 @@ export function DemographicForm() {
   } = useForm<FormValues>({
     resolver,
     defaultValues: {
-      children_count: 0,
-      household_size: 1,
-      military_service: false,
-      union_member: false,
+      income_range: initialValues?.income_range ?? '',
+      employment_status: initialValues?.employment_status ?? '',
+      education_level: initialValues?.education_level ?? '',
+      children_count: initialValues?.children_count ?? 0,
+      household_size: initialValues?.household_size ?? 1,
+      home_ownership: initialValues?.home_ownership ?? '',
+      marital_status: initialValues?.marital_status ?? '',
+      health_insurance: initialValues?.health_insurance ?? '',
+      military_service: initialValues?.military_service ?? false,
+      union_member: initialValues?.union_member ?? false,
     },
   })
 
@@ -69,7 +83,11 @@ export function DemographicForm() {
       return
     }
 
-    router.push('/survey/values')
+    if (isRetake) {
+      router.push('/dashboard')
+    } else {
+      router.push('/survey/values')
+    }
   }
 
   return (
@@ -204,7 +222,7 @@ export function DemographicForm() {
       )}
 
       <Button type="submit" loading={isSubmitting} size="lg" className="w-full">
-        Continue to Values Survey →
+        {isRetake ? 'Save Updates →' : 'Continue to Values Survey →'}
       </Button>
     </form>
   )

@@ -237,6 +237,76 @@ export interface Database {
         }
         Relationships: []
       }
+      survey_demographic_history: {
+        Row: {
+          id: string
+          user_id: string
+          income_range: string | null
+          employment_status: string | null
+          education_level: string | null
+          children_count: number | null
+          household_size: number | null
+          home_ownership: string | null
+          marital_status: string | null
+          health_insurance: string | null
+          military_service: boolean
+          union_member: boolean
+          submitted_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          income_range?: string | null
+          employment_status?: string | null
+          education_level?: string | null
+          children_count?: number | null
+          household_size?: number | null
+          home_ownership?: string | null
+          marital_status?: string | null
+          health_insurance?: string | null
+          military_service?: boolean
+          union_member?: boolean
+          submitted_at?: string
+        }
+        Update: Record<string, never>
+        Relationships: []
+      }
+      survey_values_history: {
+        Row: {
+          id: string
+          user_id: string
+          religion: string | null
+          religion_importance: number | null
+          environment: number | null
+          safety_net: number | null
+          guns: number | null
+          immigration: number | null
+          healthcare: number | null
+          abortion: number | null
+          education: number | null
+          criminal_justice: number | null
+          lgbtq_rights: number | null
+          submitted_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          religion?: string | null
+          religion_importance?: number | null
+          environment?: number | null
+          safety_net?: number | null
+          guns?: number | null
+          immigration?: number | null
+          healthcare?: number | null
+          abortion?: number | null
+          education?: number | null
+          criminal_justice?: number | null
+          lgbtq_rights?: number | null
+          submitted_at?: string
+        }
+        Update: Record<string, never>
+        Relationships: []
+      }
     }
     Views: Record<string, never>
     Functions: Record<string, never>

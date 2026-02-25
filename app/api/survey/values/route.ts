@@ -4,6 +4,25 @@ import { Database } from '@/lib/types/database.types'
 
 type ValuesInsert = Database['public']['Tables']['survey_values']['Insert']
 
+export async function GET() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const { data } = await supabase
+    .from('survey_values')
+    .select('*')
+    .eq('user_id', user.id)
+    .single()
+
+  return NextResponse.json({ data })
+}
+
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
   const {
@@ -16,7 +35,22 @@ export async function POST(request: NextRequest) {
 
   const body = await request.json() as Omit<ValuesInsert, 'user_id'>
 
-  // Upsert values survey
+  // Check if this is a retake (survey already completed)
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('survey_values_complete')
+    .eq('id', user.id)
+    .single()
+
+  const isRetake = profile?.survey_values_complete === true
+
+  // Save to history on every submission
+  await supabase.from('survey_values_history').insert({
+    user_id: user.id,
+    ...body,
+  })
+
+  // Upsert current (latest) version
   const { error: surveyError } = await supabase
     .from('survey_values')
     .upsert(
@@ -49,5 +83,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: profileError.message }, { status: 500 })
   }
 
-  return NextResponse.json({ success: true })
+  // On retake: delete cached recommendations so they regenerate with new data
+  if (isRetake) {
+    await supabase.from('recommendations').delete().eq('user_id', user.id)
+  }
+
+  return NextResponse.json({ success: true, isRetake })
 }

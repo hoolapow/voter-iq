@@ -10,8 +10,11 @@ import { Slider } from '@/components/ui/Slider'
 import { Button } from '@/components/ui/Button'
 import { RELIGIONS, VALUES_SLIDERS } from '@/lib/types/survey.types'
 
+const selectField = (msg = 'Required') =>
+  z.string().min(1, msg).optional().default('')
+
 const schema = z.object({
-  religion: z.string().min(1, 'Required'),
+  religion: selectField(),
   religion_importance: z.number().min(1).max(5),
   environment: z.number().min(1).max(5),
   safety_net: z.number().min(1).max(5),
@@ -26,21 +29,12 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>
 
-const DEFAULT_VALUES: FormValues = {
-  religion: '',
-  religion_importance: 3,
-  environment: 3,
-  safety_net: 3,
-  guns: 3,
-  immigration: 3,
-  healthcare: 3,
-  abortion: 3,
-  education: 3,
-  criminal_justice: 3,
-  lgbtq_rights: 3,
+interface ValuesFormProps {
+  isRetake?: boolean
+  initialValues?: Partial<FormValues>
 }
 
-export function ValuesForm() {
+export function ValuesForm({ isRetake = false, initialValues }: ValuesFormProps) {
   const router = useRouter()
   const [serverError, setServerError] = useState<string | null>(null)
 
@@ -50,7 +44,19 @@ export function ValuesForm() {
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: DEFAULT_VALUES,
+    defaultValues: {
+      religion: initialValues?.religion ?? '',
+      religion_importance: initialValues?.religion_importance ?? 3,
+      environment: initialValues?.environment ?? 3,
+      safety_net: initialValues?.safety_net ?? 3,
+      guns: initialValues?.guns ?? 3,
+      immigration: initialValues?.immigration ?? 3,
+      healthcare: initialValues?.healthcare ?? 3,
+      abortion: initialValues?.abortion ?? 3,
+      education: initialValues?.education ?? 3,
+      criminal_justice: initialValues?.criminal_justice ?? 3,
+      lgbtq_rights: initialValues?.lgbtq_rights ?? 3,
+    },
   })
 
   async function onSubmit(values: FormValues) {
@@ -137,7 +143,7 @@ export function ValuesForm() {
       )}
 
       <Button type="submit" loading={isSubmitting} size="lg" className="w-full">
-        See My Ballot Recommendations →
+        {isRetake ? 'Save Updates →' : 'See My Ballot Recommendations →'}
       </Button>
     </form>
   )
