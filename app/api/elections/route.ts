@@ -55,17 +55,25 @@ export async function GET(request: NextRequest) {
     const upsertedElection = upsertedRaw as unknown as ElectionRow | null
 
     if (upsertedElection && election.contests) {
-      for (const contest of election.contests) {
-        await service.from('ballot_contests').insert({
-          election_id: upsertedElection.id,
-          office: contest.office,
-          contest_type: contest.contest_type,
-          district: contest.district,
-          candidates: (contest.candidates ?? null) as Json | null,
-          referendum_question: contest.referendum_question,
-          referendum_yes_meaning: contest.referendum_yes_meaning,
-          referendum_no_meaning: contest.referendum_no_meaning,
-        })
+      // Only insert contests if none exist yet — prevents duplicates on repeated API calls
+      const { count } = await service
+        .from('ballot_contests')
+        .select('id', { count: 'exact', head: true })
+        .eq('election_id', upsertedElection.id)
+
+      if (!count || count === 0) {
+        for (const contest of election.contests) {
+          await service.from('ballot_contests').insert({
+            election_id: upsertedElection.id,
+            office: contest.office,
+            contest_type: contest.contest_type,
+            district: contest.district,
+            candidates: (contest.candidates ?? null) as Json | null,
+            referendum_question: contest.referendum_question,
+            referendum_yes_meaning: contest.referendum_yes_meaning,
+            referendum_no_meaning: contest.referendum_no_meaning,
+          })
+        }
       }
     }
   }
