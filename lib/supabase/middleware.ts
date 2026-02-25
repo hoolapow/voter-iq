@@ -45,54 +45,64 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Logged in + auth route → redirect based on survey state
-  if (user && isAuthRoute) {
+  // Helper: fetch profile once for all logged-in route checks below
+  // Only runs when user is logged in and hitting a route that needs survey state
+  const needsSurveyCheck =
+    user &&
+    (isAuthRoute ||
+      pathname.startsWith('/survey') ||
+      pathname.startsWith('/dashboard') ||
+      pathname.startsWith('/election'))
+
+  if (needsSurveyCheck) {
     const { data: profile } = await supabase
       .from('profiles')
       .select('survey_demographic_complete, survey_values_complete')
-      .eq('id', user.id)
+      .eq('id', user!.id)
       .single()
 
     const url = request.nextUrl.clone()
+    const demoDone = profile?.survey_demographic_complete ?? false
+    const valuesDone = profile?.survey_values_complete ?? false
 
-    if (!profile?.survey_demographic_complete) {
-      url.pathname = '/survey/demographic'
-    } else if (!profile?.survey_values_complete) {
-      url.pathname = '/survey/values'
-    } else {
-      url.pathname = '/dashboard'
-    }
-
-    return NextResponse.redirect(url)
-  }
-
-  // Logged in, hitting /survey routes — enforce funnel order
-  if (user && pathname.startsWith('/survey')) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('survey_demographic_complete, survey_values_complete')
-      .eq('id', user.id)
-      .single()
-
-    const url = request.nextUrl.clone()
-
-    if (!profile?.survey_demographic_complete && pathname !== '/survey/demographic') {
-      url.pathname = '/survey/demographic'
+    // Logged in + auth route → redirect based on survey state
+    if (isAuthRoute) {
+      if (!demoDone) {
+        url.pathname = '/survey/demographic'
+      } else if (!valuesDone) {
+        url.pathname = '/survey/values'
+      } else {
+        url.pathname = '/dashboard'
+      }
       return NextResponse.redirect(url)
     }
 
-    if (
-      profile?.survey_demographic_complete &&
-      !profile?.survey_values_complete &&
-      pathname !== '/survey/values'
-    ) {
-      url.pathname = '/survey/values'
-      return NextResponse.redirect(url)
+    // Logged in + dashboard or election → must have completed both surveys
+    if (pathname.startsWith('/dashboard') || pathname.startsWith('/election')) {
+      if (!demoDone) {
+        url.pathname = '/survey/demographic'
+        return NextResponse.redirect(url)
+      }
+      if (!valuesDone) {
+        url.pathname = '/survey/values'
+        return NextResponse.redirect(url)
+      }
     }
 
-    if (profile?.survey_demographic_complete && profile?.survey_values_complete) {
-      url.pathname = '/dashboard'
-      return NextResponse.redirect(url)
+    // Logged in + survey route → enforce funnel order
+    if (pathname.startsWith('/survey')) {
+      if (!demoDone && pathname !== '/survey/demographic') {
+        url.pathname = '/survey/demographic'
+        return NextResponse.redirect(url)
+      }
+      if (demoDone && !valuesDone && pathname !== '/survey/values') {
+        url.pathname = '/survey/values'
+        return NextResponse.redirect(url)
+      }
+      if (demoDone && valuesDone) {
+        url.pathname = '/dashboard'
+        return NextResponse.redirect(url)
+      }
     }
   }
 
