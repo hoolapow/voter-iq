@@ -30,7 +30,7 @@ type SignupValues = z.infer<typeof signupSchema>
 export function SignupForm() {
   const router = useRouter()
   const [serverError, setServerError] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
+  const [needsConfirmation, setNeedsConfirmation] = useState(false)
 
   const {
     register,
@@ -42,7 +42,7 @@ export function SignupForm() {
     setServerError(null)
     const supabase = createClient()
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email: values.email,
       password: values.password,
       options: {
@@ -52,7 +52,6 @@ export function SignupForm() {
           birthday: values.birthday,
           zipcode: values.zipcode,
         },
-        emailRedirectTo: `${window.location.origin}/auth/confirm`,
       },
     })
 
@@ -61,18 +60,33 @@ export function SignupForm() {
       return
     }
 
-    setSuccess(true)
-    // After a brief moment, push to survey start
-    setTimeout(() => router.push('/survey/demographic'), 1500)
+    // If email confirmation is enabled, session will be null after signup.
+    // Show a "check your email" message instead of redirecting.
+    if (!data.session) {
+      setNeedsConfirmation(true)
+      return
+    }
+
+    // Email confirmation is disabled — session is live, go straight to survey.
+    router.push('/survey/demographic')
+    router.refresh()
   }
 
-  if (success) {
+  if (needsConfirmation) {
     return (
       <Card>
         <CardContent className="py-12 text-center">
-          <div className="text-5xl mb-4">✅</div>
-          <h2 className="text-xl font-bold text-gray-900">Account created!</h2>
-          <p className="mt-2 text-sm text-gray-600">Redirecting you to set up your profile…</p>
+          <div className="text-5xl mb-4">📬</div>
+          <h2 className="text-xl font-bold text-gray-900">Check your email</h2>
+          <p className="mt-2 text-sm text-gray-600 max-w-xs mx-auto">
+            We sent a confirmation link to your email address. Click it to activate your account,
+            then come back and sign in.
+          </p>
+          <div className="mt-6">
+            <Link href="/auth/login" className="text-blue-600 hover:underline text-sm font-medium">
+              Go to Sign In →
+            </Link>
+          </div>
         </CardContent>
       </Card>
     )
