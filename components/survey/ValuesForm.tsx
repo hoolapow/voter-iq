@@ -10,11 +10,8 @@ import { Slider } from '@/components/ui/Slider'
 import { Button } from '@/components/ui/Button'
 import { RELIGIONS, VALUES_SLIDERS } from '@/lib/types/survey.types'
 
-const selectField = (msg = 'Required') =>
-  z.string().min(1, msg).optional().default('')
-
 const schema = z.object({
-  religion: selectField(),
+  religion: z.string().min(1, 'Required'),
   religion_importance: z.number().min(1).max(5),
   environment: z.number().min(1).max(5),
   safety_net: z.number().min(1).max(5),
@@ -28,8 +25,14 @@ const schema = z.object({
 })
 
 type FormValues = z.infer<typeof schema>
+
+// Preprocess null/undefined → '' for the religion select before Zod validation
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const resolver = zodResolver(schema) as any
+const resolver = async (values: any, ctx: any, opts: any) => {
+  const cleaned = { ...values }
+  if (cleaned.religion == null) cleaned.religion = ''
+  return zodResolver(schema)(cleaned, ctx, opts)
+}
 
 interface ValuesFormProps {
   isRetake?: boolean

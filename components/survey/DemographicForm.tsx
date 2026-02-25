@@ -17,27 +17,31 @@ import {
   HEALTH_INSURANCES,
 } from '@/lib/types/survey.types'
 
-const selectField = (msg = 'Required') =>
-  z.string().min(1, msg).optional().default('')
-
 const schema = z.object({
-  income_range: selectField(),
-  employment_status: selectField(),
-  education_level: selectField(),
+  income_range: z.string().min(1, 'Required'),
+  employment_status: z.string().min(1, 'Required'),
+  education_level: z.string().min(1, 'Required'),
   children_count: z.number().min(0).max(20),
   household_size: z.number().min(1).max(20),
-  home_ownership: selectField(),
-  marital_status: selectField(),
-  health_insurance: selectField(),
+  home_ownership: z.string().min(1, 'Required'),
+  marital_status: z.string().min(1, 'Required'),
+  health_insurance: z.string().min(1, 'Required'),
   military_service: z.boolean(),
   union_member: z.boolean(),
 })
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type FormValues = z.infer<typeof schema>
-// Cast resolver to avoid z.coerce type mismatch
+
+// Zod v4 throws "expected string, received undefined" for unset selects.
+// Preprocess the form values to coerce null/undefined → '' before Zod sees them.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const resolver = zodResolver(schema) as any
+const SELECT_FIELDS = ['income_range', 'employment_status', 'education_level', 'home_ownership', 'marital_status', 'health_insurance'] as const
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const resolver = async (values: any, ctx: any, opts: any) => {
+  const cleaned = { ...values }
+  for (const f of SELECT_FIELDS) { if (cleaned[f] == null) cleaned[f] = '' }
+  return zodResolver(schema)(cleaned, ctx, opts)
+}
 
 interface DemographicFormProps {
   isRetake?: boolean
