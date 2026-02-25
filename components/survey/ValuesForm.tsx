@@ -117,10 +117,7 @@ export function ValuesForm({ isRetake = false, initialValues }: ValuesFormProps)
 
       <div className="border-t border-gray-200 pt-6 flex flex-col gap-6">
         <h3 className="text-sm font-semibold text-gray-800 uppercase tracking-wide">
-          Policy Values
-          <span className="ml-2 text-xs font-normal text-gray-500 normal-case">
-            (1 = more progressive, 5 = more conservative)
-          </span>
+          Policy Preferences
         </h3>
 
         {VALUES_SLIDERS.map((slider) => (

@@ -21,30 +21,31 @@ function formatDemographics(demo: DemographicRow): string {
   return lines.join('\n')
 }
 
-function sliderLabel(val: number | null): string {
-  if (!val) return 'No preference (3)'
-  const labels: Record<number, string> = {
-    1: 'Strongly lean left/liberal',
-    2: 'Lean left/liberal',
-    3: 'Moderate / No strong preference',
-    4: 'Lean right/conservative',
-    5: 'Strongly lean right/conservative',
-  }
-  return `${labels[val]} (${val}/5)`
+// Maps a 1–5 slider value to a plain-language description using the slider's own labels.
+// Avoids political framing — describes the actual policy position the voter expressed.
+function sliderPosition(val: number | null, leftLabel: string, rightLabel: string): string {
+  if (!val || val === 3) return 'No strong preference'
+  if (val === 1) return `Strongly prefers: ${leftLabel}`
+  if (val === 2) return `Leans toward: ${leftLabel}`
+  if (val === 4) return `Leans toward: ${rightLabel}`
+  return `Strongly prefers: ${rightLabel}`
 }
 
 function formatValues(values: ValuesRow): string {
+  const importanceLabel = (v: number | null) =>
+    v == null ? 'not specified' : v <= 2 ? 'low' : v === 3 ? 'moderate' : 'high'
+
   const lines = [
-    `Religion: ${values.religion || 'Not specified'} (Importance: ${values.religion_importance ?? 'N/A'}/5)`,
-    `Environmental Protection: ${sliderLabel(values.environment)}`,
-    `Social Safety Net: ${sliderLabel(values.safety_net)}`,
-    `Gun Rights: ${sliderLabel(values.guns)}`,
-    `Immigration Policy: ${sliderLabel(values.immigration)}`,
-    `Healthcare System: ${sliderLabel(values.healthcare)}`,
-    `Abortion Access: ${sliderLabel(values.abortion)}`,
-    `Education (Public vs Private): ${sliderLabel(values.education)}`,
-    `Criminal Justice: ${sliderLabel(values.criminal_justice)}`,
-    `LGBTQ+ Rights: ${sliderLabel(values.lgbtq_rights)}`,
+    `Religion: ${values.religion || 'Not specified'} — importance in voting decisions: ${importanceLabel(values.religion_importance)}`,
+    `Environmental policy: ${sliderPosition(values.environment, 'prioritize economic growth over regulations', 'prioritize environmental protection')}`,
+    `Social safety net: ${sliderPosition(values.safety_net, 'reduce government assistance programs', 'expand social safety net programs')}`,
+    `Gun policy: ${sliderPosition(values.guns, 'more gun regulations', 'protect gun ownership rights')}`,
+    `Immigration: ${sliderPosition(values.immigration, 'stricter immigration enforcement', 'more welcoming immigration policy')}`,
+    `Healthcare: ${sliderPosition(values.healthcare, 'market-based healthcare system', 'universal/government-provided healthcare')}`,
+    `Abortion access: ${sliderPosition(values.abortion, 'more restrictions on abortion', 'fewer restrictions on abortion access')}`,
+    `Education: ${sliderPosition(values.education, 'school choice and private school support', 'increased public school funding')}`,
+    `Criminal justice: ${sliderPosition(values.criminal_justice, 'tough-on-crime enforcement approaches', 'reform and rehabilitation focus')}`,
+    `LGBTQ+ rights: ${sliderPosition(values.lgbtq_rights, 'traditional values on LGBTQ issues', 'full legal equality for LGBTQ individuals')}`,
   ]
   return lines.join('\n')
 }
@@ -65,12 +66,13 @@ Office: ${contest.office}${contest.district ? ` (${contest.district})` : ''}
 Candidates:
 ${(contest.candidates || []).map((c) => `  - ${c.name} (${c.party || 'No party'})`).join('\n')}`
 
-  return `You are a nonpartisan civic information assistant. Your task is to provide a personalized, factual ballot recommendation based on a voter's stated socioeconomic background and values.
+  return `You are a nonpartisan civic information assistant. Your task is to provide a personalized ballot recommendation based on a voter's real-world circumstances and stated policy preferences.
 
 IMPORTANT RULES:
-- Be strictly nonpartisan and factual
-- Base recommendations entirely on the voter's stated values and circumstances
-- Do not inject your own political opinions
+- Be strictly nonpartisan — do not frame recommendations in terms of political party, left/right, or liberal/conservative labels
+- Focus on practical alignment: how would each option actually affect someone in this voter's specific situation?
+- Consider their socioeconomic circumstances (income, employment, health coverage, family size, housing) when evaluating which option serves their real interests
+- Cross-reference their stated policy preferences with the concrete impacts of each option
 - Acknowledge tradeoffs honestly
 - Output ONLY valid JSON — no markdown, no extra text
 
@@ -78,16 +80,16 @@ VOTER PROFILE:
 === Socioeconomic Background ===
 ${formatDemographics(demographics)}
 
-=== Political Values (1=progressive, 5=conservative) ===
+=== Policy Preferences ===
 ${formatValues(values)}
 
 BALLOT CONTEST:
 ${contestSection}
 
-Analyze this contest and produce a recommendation that aligns with this voter's stated values. Return exactly this JSON structure:
+Analyze this contest and recommend the option that best aligns with this voter's stated preferences AND their real-world circumstances and interests. Return exactly this JSON structure:
 {
   "recommendation": "string — one clear recommendation (e.g., 'Vote YES', 'Vote for Candidate Name', 'Vote NO')",
-  "reasoning": "string — 3-4 paragraphs explaining why this aligns with the voter's values, including honest tradeoffs",
+  "reasoning": "string — 3-4 paragraphs grounded in this voter's specific situation and preferences, including honest tradeoffs",
   "sources": [
     {
       "title": "string — source title",
@@ -95,7 +97,7 @@ Analyze this contest and produce a recommendation that aligns with this voter's 
       "summary": "string — one sentence about what this source shows"
     }
   ],
-  "key_factors": ["string array — 3-5 bullet points of the most important factors driving this recommendation"]
+  "key_factors": ["string array — 3-5 bullet points of the most important factors for THIS voter specifically"]
 }`
 }
 
