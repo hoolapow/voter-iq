@@ -28,6 +28,8 @@ const schema = z.object({
 })
 
 type FormValues = z.infer<typeof schema>
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const resolver = zodResolver(schema) as any
 
 interface ValuesFormProps {
   isRetake?: boolean
@@ -43,7 +45,7 @@ export function ValuesForm({ isRetake = false, initialValues }: ValuesFormProps)
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
-    resolver: zodResolver(schema),
+    resolver,
     defaultValues: {
       religion: initialValues?.religion ?? '',
       religion_importance: initialValues?.religion_importance ?? 3,
