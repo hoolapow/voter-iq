@@ -66,30 +66,29 @@ Office: ${contest.office}${contest.district ? ` (${contest.district})` : ''}
 Candidates:
 ${(contest.candidates || []).map((c) => `  - ${c.name} (${c.party || 'No party'})`).join('\n')}`
 
-  return `You are a nonpartisan civic information assistant. Your task is to provide a personalized ballot recommendation based on a voter's real-world circumstances and stated policy preferences.
+  return `You are a civic information assistant helping a voter understand how ballot choices align with their personal circumstances and policy preferences.
 
-IMPORTANT RULES:
-- Be strictly nonpartisan — do not frame recommendations in terms of political party, left/right, or liberal/conservative labels
-- Focus on practical alignment: how would each option actually affect someone in this voter's specific situation?
-- Consider their socioeconomic circumstances (income, employment, health coverage, family size, housing) when evaluating which option serves their real interests
-- Cross-reference their stated policy preferences with the concrete impacts of each option
-- Acknowledge tradeoffs honestly
-- Output ONLY valid JSON — no markdown, no extra text
+ABSOLUTE RULES — violating any of these invalidates your response:
+1. FORBIDDEN WORDS in your output: "progressive", "conservative", "liberal", "left", "right", "left-wing", "right-wing", "Democrat", "Republican" (when used to describe the voter or their views). Do not use these words to characterize the voter under any circumstances.
+2. NEVER say things like "as a progressive", "your conservative stance", "you lean liberal", "your left-leaning values", or any similar political identity framing. These are strictly forbidden.
+3. Instead, always reference the voter's SPECIFIC STATED PREFERENCES by name. Say "your preference for government-provided healthcare" not "your progressive healthcare views". Say "your preference for stricter immigration enforcement" not "your conservative immigration stance".
+4. Reason from PRACTICAL IMPACT: explain how each option would concretely affect someone with this voter's income level, employment situation, health coverage, family size, housing status, and other real circumstances.
+5. Output ONLY valid JSON — no markdown, no extra text.
 
 VOTER PROFILE:
 === Socioeconomic Background ===
 ${formatDemographics(demographics)}
 
-=== Policy Preferences ===
+=== Stated Policy Preferences ===
 ${formatValues(values)}
 
 BALLOT CONTEST:
 ${contestSection}
 
-Analyze this contest and recommend the option that best aligns with this voter's stated preferences AND their real-world circumstances and interests. Return exactly this JSON structure:
+Recommend the option that best matches this voter's stated preferences and serves their real-world interests. In your reasoning, cite their specific preferences and circumstances — never their political identity. Return exactly this JSON:
 {
   "recommendation": "string — one clear recommendation (e.g., 'Vote YES', 'Vote for Candidate Name', 'Vote NO')",
-  "reasoning": "string — 3-4 paragraphs grounded in this voter's specific situation and preferences, including honest tradeoffs",
+  "reasoning": "string — 3-4 paragraphs. Reference specific preferences (e.g., 'your preference for expanded safety net programs') and concrete life circumstances (income, coverage, family size). No political labels.",
   "sources": [
     {
       "title": "string — source title",
@@ -97,7 +96,7 @@ Analyze this contest and recommend the option that best aligns with this voter's
       "summary": "string — one sentence about what this source shows"
     }
   ],
-  "key_factors": ["string array — 3-5 bullet points of the most important factors for THIS voter specifically"]
+  "key_factors": ["string array — 3-5 bullets tied to this voter's specific situation, no political labels"]
 }`
 }
 
@@ -113,6 +112,8 @@ export async function generateRecommendation(
     model: 'claude-sonnet-4-6',
     max_tokens: 2048,
     temperature: 0.3,
+    system:
+      'You provide personalized ballot guidance. You NEVER use political identity labels (progressive, conservative, liberal, left, right, Democrat, Republican) to describe a voter or their views. You always cite the voter\'s specific named preferences and real-world circumstances instead.',
     messages: [{ role: 'user', content: prompt }],
   })
 
