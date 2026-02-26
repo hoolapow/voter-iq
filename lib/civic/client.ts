@@ -1,5 +1,5 @@
 import { Election, Contest } from '@/lib/types/election.types'
-import { MOCK_ELECTIONS } from './mock'
+import { MOCK_ELECTIONS, getMockElectionsForAddress } from './mock'
 
 const CIVIC_BASE = 'https://www.googleapis.com/civicinfo/v2'
 
@@ -74,7 +74,7 @@ export async function getElectionsForAddress(
   address: string
 ): Promise<(Election & { contests: Contest[] })[]> {
   if (process.env.USE_MOCK_CIVIC_DATA === 'true') {
-    return MOCK_ELECTIONS
+    return getMockElectionsForAddress(address)
   }
   return fetchElectionsForAddress(address)
 }

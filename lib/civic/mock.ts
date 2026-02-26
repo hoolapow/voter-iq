@@ -1,4 +1,106 @@
 import { Election, Contest } from '@/lib/types/election.types'
+import { ELECTION_SCHEDULE } from '@/lib/data/election-schedule'
+
+/**
+ * Generates county-specific mock elections based on the address string.
+ * Address format: "Travis County, Texas" or just "Texas"
+ */
+export function getMockElectionsForAddress(address: string): (Election & { contests: Contest[] })[] {
+  const parts = address.split(', ')
+  const countyDisplay = parts.length > 1 ? parts[0] : null  // e.g. "Travis County"
+  const stateName = parts[parts.length - 1]                  // e.g. "Texas"
+
+  const stateEntry = Object.entries(ELECTION_SCHEDULE).find(
+    ([, info]) => info.stateName === stateName
+  )
+  const stateFips = stateEntry?.[0]
+  const stateInfo = stateEntry?.[1]
+  const electionDate = stateInfo?.nextElection ?? '2026-11-03'
+  const electionType = stateInfo?.electionType ?? 'Primary'
+  const countyName = countyDisplay ?? stateName
+  const electionId = `mock-${stateFips ?? 'xx'}-primary-2026`
+
+  return [
+    {
+      id: electionId,
+      external_id: electionId,
+      name: `${stateName} 2026 ${electionType}`,
+      election_date: electionDate,
+      state: stateFips ?? null,
+      zipcodes: null,
+      contests: [
+        {
+          id: `${electionId}-senate`,
+          election_id: electionId,
+          office: 'U.S. Senator',
+          contest_type: 'candidate',
+          district: stateName,
+          candidates: [
+            { name: 'Patricia Okonkwo', party: 'Democratic' },
+            { name: 'William Hargrove', party: 'Republican' },
+            { name: 'Sandra Vidal', party: 'Libertarian' },
+          ],
+          referendum_question: null,
+          referendum_yes_meaning: null,
+          referendum_no_meaning: null,
+        },
+        {
+          id: `${electionId}-governor`,
+          election_id: electionId,
+          office: 'Governor',
+          contest_type: 'candidate',
+          district: stateName,
+          candidates: [
+            { name: 'Marcus Chen', party: 'Democratic' },
+            { name: 'Laura Whitfield', party: 'Republican' },
+          ],
+          referendum_question: null,
+          referendum_yes_meaning: null,
+          referendum_no_meaning: null,
+        },
+        {
+          id: `${electionId}-house`,
+          election_id: electionId,
+          office: 'U.S. Representative',
+          contest_type: 'candidate',
+          district: `${countyName} Area`,
+          candidates: [
+            { name: 'Angela Reyes', party: 'Democratic' },
+            { name: 'Thomas Bancroft', party: 'Republican' },
+          ],
+          referendum_question: null,
+          referendum_yes_meaning: null,
+          referendum_no_meaning: null,
+        },
+        {
+          id: `${electionId}-state-senate`,
+          election_id: electionId,
+          office: 'State Senator',
+          contest_type: 'candidate',
+          district: `${countyName} Senate District`,
+          candidates: [
+            { name: 'Diane Nakamura', party: 'Democratic' },
+            { name: 'Craig Sutton', party: 'Republican' },
+          ],
+          referendum_question: null,
+          referendum_yes_meaning: null,
+          referendum_no_meaning: null,
+        },
+        {
+          id: `${electionId}-measure-a`,
+          election_id: electionId,
+          office: null,
+          contest_type: 'referendum',
+          district: countyName,
+          candidates: null,
+          referendum_question: `Measure A: ${countyName} Infrastructure Bond`,
+          referendum_yes_meaning: `Authorizes $250 million in general obligation bonds to fund road repairs, bridge maintenance, and public transit improvements throughout ${countyName}.`,
+          referendum_no_meaning: `No new bonds issued; infrastructure projects rely on existing county budget allocations and annual appropriations.`,
+        },
+      ],
+    },
+  ]
+}
 
 export const MOCK_ELECTIONS: (Election & { contests: Contest[] })[] = [
   {
