@@ -32,6 +32,7 @@ export interface Election {
 export interface Reference {
   title: string
   url: string
+  citation: string  // e.g. "Autor, D. et al. (2013). Science, 341(6145), 1174-1179."
   summary: string
 }
 

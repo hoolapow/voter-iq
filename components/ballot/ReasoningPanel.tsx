@@ -67,19 +67,26 @@ export function ReasoningPanel({ recommendation }: ReasoningPanelProps) {
               <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
                 Sources &amp; References
               </h4>
-              <ul className="space-y-2">
+              <ul className="space-y-3">
                 {references.map((ref, i) => (
-                  <li key={i} className="text-sm">
-                    <a
-                      href={ref.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:underline font-medium"
-                    >
-                      {ref.title}
-                    </a>
+                  <li key={i} className="text-sm space-y-0.5">
+                    {ref.url ? (
+                      <a
+                        href={ref.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline font-medium"
+                      >
+                        {ref.title}
+                      </a>
+                    ) : (
+                      <span className="font-medium text-gray-800">{ref.title}</span>
+                    )}
+                    {ref.citation && (
+                      <p className="text-xs text-gray-500 italic">{ref.citation}</p>
+                    )}
                     {ref.summary && (
-                      <span className="text-gray-500"> — {ref.summary}</span>
+                      <p className="text-gray-600">{ref.summary}</p>
                     )}
                   </li>
                 ))}

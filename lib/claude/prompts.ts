@@ -88,16 +88,25 @@ ${contestSection}
 Recommend the option that best matches this voter's stated preferences and serves their real-world interests. In your reasoning, cite their specific preferences and circumstances — never their political identity. Return exactly this JSON:
 {
   "recommendation": "string — one clear recommendation (e.g., 'Vote YES', 'Vote for Candidate Name', 'Vote NO')",
-  "reasoning": "string — 3-4 paragraphs. Reference specific preferences (e.g., 'your preference for expanded safety net programs') and concrete life circumstances (income, coverage, family size). No political labels.",
+  "reasoning": "string — 3-4 paragraphs. Reference specific preferences (e.g., 'your preference for expanded safety net programs') and concrete life circumstances (income, coverage, family size). No political labels. Where relevant, reference specific findings from the sources you cite below.",
   "sources": [
     {
-      "title": "string — source title",
-      "url": "string — real URL if known, otherwise descriptive placeholder",
-      "summary": "string — one sentence about what this source shows"
+      "title": "string — exact title of the paper, report, or dataset",
+      "url": "string — ONLY include a URL if you are confident it is real and stable: prefer DOI links (https://doi.org/...), CBO/CRS permalinks, Pew Research report pages, or official government data portals (bls.gov, census.gov, etc.). Use an empty string rather than guessing or fabricating a URL.",
+      "citation": "string — full academic-style citation: Author(s) Last, First Initial. (Year). Title. Journal/Institution, Volume(Issue), Pages or URL. E.g.: 'Autor, D., Levy, F., & Murnane, R. J. (2003). The Skill Content of Recent Technological Change. Quarterly Journal of Economics, 118(4), 1279–1333.'",
+      "summary": "string — 1-2 sentences: what this research specifically found AND how that finding directly supports the recommendation made above"
     }
   ],
   "key_factors": ["string array — 3-5 bullets tied to this voter's specific situation, no political labels"]
-}`
+}
+
+SOURCES REQUIREMENTS:
+- Include 3–5 sources minimum.
+- Prioritize: peer-reviewed journal articles, NBER/NBER working papers, Congressional Budget Office or Congressional Research Service analyses, Pew Research Center reports, Brookings Institution / Urban Institute / Tax Policy Center studies, and official government statistical sources (BLS, Census Bureau, BEA, NIH, CDC).
+- Each source must directly support a specific factual claim made in your reasoning — not be a generic background reference.
+- Do NOT cite news articles, opinion pieces, campaign materials, or advocacy websites.
+- Do NOT invent or guess URLs. A missing URL is far better than a hallucinated one. Use a real DOI or well-known institution permalink if you know it, otherwise leave url as "".
+- The citation field must be formatted properly so the reader can independently locate the source.`
 }
 
 export async function generateRecommendation(
@@ -128,7 +137,7 @@ export async function generateRecommendation(
   let parsed: {
     recommendation: string
     reasoning: string
-    sources: { title: string; url: string; summary: string }[]
+    sources: { title: string; url: string; citation: string; summary: string }[]
     key_factors: string[]
   }
 
