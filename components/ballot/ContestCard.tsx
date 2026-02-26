@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import Link from 'next/link'
 import { Contest, Recommendation } from '@/lib/types/election.types'
 import { Candidate } from '@/lib/types/election.types'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
@@ -12,14 +13,16 @@ import { ReasoningPanel } from './ReasoningPanel'
 interface ContestCardProps {
   contest: Contest
   cachedRecommendation: Recommendation | null
+  isAuthenticated?: boolean
 }
 
-export function ContestCard({ contest, cachedRecommendation }: ContestCardProps) {
+export function ContestCard({ contest, cachedRecommendation, isAuthenticated = true }: ContestCardProps) {
   const [recommendation, setRecommendation] = useState<Recommendation | null>(cachedRecommendation)
-  const [loading, setLoading] = useState(!cachedRecommendation)
+  const [loading, setLoading] = useState(!cachedRecommendation && isAuthenticated !== false)
   const [error, setError] = useState<string | null>(null)
 
   const fetchRecommendation = useCallback(async () => {
+    if (!isAuthenticated) return
     if (recommendation) return
     setLoading(true)
     setError(null)
@@ -37,11 +40,12 @@ export function ContestCard({ contest, cachedRecommendation }: ContestCardProps)
     } finally {
       setLoading(false)
     }
-  }, [contest.id, recommendation])
+  }, [contest.id, recommendation, isAuthenticated])
 
   useEffect(() => {
+    if (!isAuthenticated) return
     fetchRecommendation()
-  }, [fetchRecommendation])
+  }, [fetchRecommendation, isAuthenticated])
 
   const contestLabel =
     contest.contest_type === 'referendum'
@@ -75,18 +79,29 @@ export function ContestCard({ contest, cachedRecommendation }: ContestCardProps)
             )}
           </div>
 
-          {loading && (
-            <div className="flex items-center gap-1.5 text-xs text-gray-400">
-              <Spinner size="sm" />
-              <span>Analyzing…</span>
-            </div>
-          )}
+          {isAuthenticated === false ? (
+            <Link
+              href="/auth/login"
+              className="text-xs text-indigo-600 hover:text-indigo-800 font-medium whitespace-nowrap"
+            >
+              Sign in for AI
+            </Link>
+          ) : (
+            <>
+              {loading && (
+                <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                  <Spinner size="sm" />
+                  <span>Analyzing…</span>
+                </div>
+              )}
 
-          {!loading && recommendation && (
-            <RecommendationBadge
-              recommendation={recommendation.recommendation}
-              contestType={contest.contest_type}
-            />
+              {!loading && recommendation && (
+                <RecommendationBadge
+                  recommendation={recommendation.recommendation}
+                  contestType={contest.contest_type}
+                />
+              )}
+            </>
           )}
         </div>
       </CardHeader>
@@ -134,7 +149,7 @@ export function ContestCard({ contest, cachedRecommendation }: ContestCardProps)
         )}
 
         {/* Reasoning panel */}
-        {recommendation && <ReasoningPanel recommendation={recommendation} />}
+        {isAuthenticated !== false && recommendation && <ReasoningPanel recommendation={recommendation} />}
       </CardContent>
     </Card>
   )
