@@ -3,13 +3,9 @@ import { MOCK_ELECTIONS } from './mock'
 
 const CIVIC_BASE = 'https://www.googleapis.com/civicinfo/v2'
 
-export async function getElectionsForZipcode(
-  zipcode: string
+async function fetchElectionsForAddress(
+  address: string
 ): Promise<(Election & { contests: Contest[] })[]> {
-  if (process.env.USE_MOCK_CIVIC_DATA === 'true') {
-    return MOCK_ELECTIONS
-  }
-
   const apiKey = process.env.GOOGLE_CIVIC_API_KEY
   if (!apiKey) throw new Error('GOOGLE_CIVIC_API_KEY is not set')
 
@@ -29,9 +25,9 @@ export async function getElectionsForZipcode(
   const results: (Election & { contests: Contest[] })[] = []
 
   for (const el of availableElections) {
-    const address = encodeURIComponent(`${zipcode}, CA`)
+    const encodedAddress = encodeURIComponent(address)
     const voterRes = await fetch(
-      `${CIVIC_BASE}/voterinfo?key=${apiKey}&address=${address}&electionId=${el.id}`,
+      `${CIVIC_BASE}/voterinfo?key=${apiKey}&address=${encodedAddress}&electionId=${el.id}`,
       { next: { revalidate: 3600 } }
     )
     if (!voterRes.ok) continue
@@ -57,10 +53,28 @@ export async function getElectionsForZipcode(
       name: el.name,
       election_date: el.electionDay,
       state: null,
-      zipcodes: [zipcode],
+      zipcodes: [address],
       contests,
     })
   }
 
   return results
+}
+
+export async function getElectionsForZipcode(
+  zipcode: string
+): Promise<(Election & { contests: Contest[] })[]> {
+  if (process.env.USE_MOCK_CIVIC_DATA === 'true') {
+    return MOCK_ELECTIONS
+  }
+  return fetchElectionsForAddress(zipcode)
+}
+
+export async function getElectionsForAddress(
+  address: string
+): Promise<(Election & { contests: Contest[] })[]> {
+  if (process.env.USE_MOCK_CIVIC_DATA === 'true') {
+    return MOCK_ELECTIONS
+  }
+  return fetchElectionsForAddress(address)
 }

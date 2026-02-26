@@ -25,7 +25,12 @@ export function CountyPanel({ fips, countyName, isOpen, onClose, isAuthenticated
     setError(null)
     setElections([])
 
-    fetch(`/api/map/county?fips=${fips}`)
+    // countyName is e.g. "Los Angeles, California" — extract just the county part
+    const rawCounty = countyName.split(', ')[0]
+    const params = new URLSearchParams({ fips })
+    if (rawCounty) params.set('county', rawCounty)
+
+    fetch(`/api/map/county?${params}`)
       .then((res) => res.json())
       .then((data) => {
         if (data.error) throw new Error(data.error)
