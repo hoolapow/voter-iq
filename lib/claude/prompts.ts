@@ -1,6 +1,7 @@
 import { Contest, Recommendation } from '@/lib/types/election.types'
 import { Database } from '@/lib/types/database.types'
 import { getAnthropicClient } from './client'
+import { getStateDemographicContext } from '@/lib/data/state-demographics'
 
 type DemographicRow = Database['public']['Tables']['survey_demographic']['Row']
 type ValuesRow = Database['public']['Tables']['survey_values']['Row']
@@ -145,6 +146,111 @@ export async function generateRecommendation(
     parsed = JSON.parse(raw)
   } catch {
     throw new Error(`Failed to parse Claude response as JSON: ${raw.slice(0, 200)}`)
+  }
+
+  return {
+    recommendation: parsed.recommendation,
+    reasoning: parsed.reasoning,
+    sources: parsed.sources ?? null,
+    key_factors: parsed.key_factors ?? null,
+  }
+}
+
+// ─── Map-panel recommendation (no user account required) ─────────────────────
+// Uses the state's median demographic profile from Census data rather than
+// a specific user's survey responses. Focuses on objective policy analysis.
+
+function buildMapPrompt(contest: Contest, stateName: string, stateFips: string): string {
+  const contestSection =
+    contest.contest_type === 'referendum'
+      ? `BALLOT MEASURE:
+Question: ${contest.referendum_question}
+If YES: ${contest.referendum_yes_meaning}
+If NO: ${contest.referendum_no_meaning}`
+      : `CANDIDATE RACE:
+Office: ${contest.office}${contest.district ? ` (${contest.district})` : ''}
+Candidates:
+${(contest.candidates || []).map((c) => `  - ${c.name} (${c.party || 'No party'})`).join('\n')}`
+
+  const demographicContext = getStateDemographicContext(stateFips)
+
+  return `You are a nonpartisan civic research assistant providing objective, evidence-based ballot analysis for the general public.
+
+ABSOLUTE RULES — violating any of these invalidates your response:
+1. This is NOT a personalized recommendation. Do NOT use "you" or address the reader directly.
+2. FORBIDDEN WORDS: "progressive", "conservative", "liberal", "left", "right", "left-wing", "right-wing", "Democrat", "Republican" (as ideological labels). Never characterize a candidate or policy using these terms.
+3. Focus exclusively on verifiable, factual information: policy outcomes, fiscal analyses, voting records, academic research.
+4. Output ONLY valid JSON — no markdown, no extra text.
+
+STATE CONTEXT — ${stateName}:
+The following are approximate median demographic statistics for ${stateName} residents, based on U.S. Census Bureau ACS data:
+${demographicContext}
+
+BALLOT CONTEST:
+${contestSection}
+
+Analyze this contest objectively. Your reasoning should cover:
+1. What each option (candidate position / yes / no) would concretely do — policy details, fiscal cost, implementation mechanism.
+2. How the likely outcomes would affect residents with the demographic profile above — e.g., median-income homeowners, workers without employer insurance, small-business owners.
+3. What peer-reviewed research or official government analyses say about the expected effects of similar policies.
+4. Key trade-offs a well-informed voter should weigh.
+
+Do NOT editorialize or express a political preference. Recommend the option that is best supported by objective evidence and aligns with the interests of the typical ${stateName} resident described above. Return exactly this JSON:
+{
+  "recommendation": "string — one clear evidence-based recommendation (e.g., 'Vote YES', 'Vote for Candidate Name', 'Vote NO')",
+  "reasoning": "string — 3–4 paragraphs of factual, nonpartisan analysis. Cite specific policy details and research findings. No political labels. No 'you' language — write in third person (e.g., 'For a median-income renter in ${stateName}...').",
+  "sources": [
+    {
+      "title": "string — exact title of the paper, report, or dataset",
+      "url": "string — ONLY a real, stable URL (DOI, CBO/CRS permalink, Pew report page, bls.gov, census.gov, etc.). Use empty string if uncertain.",
+      "citation": "string — full academic-style citation: Author(s). (Year). Title. Journal/Institution, Volume(Issue), Pages.",
+      "summary": "string — 1–2 sentences: what this research found AND how it directly supports the analysis above"
+    }
+  ],
+  "key_factors": ["string array — 3–5 factual bullet points a voter should know, grounded in the research cited. No political labels."]
+}
+
+SOURCES REQUIREMENTS:
+- Include 3–5 sources minimum.
+- Prioritize peer-reviewed journals, NBER working papers, CBO/CRS analyses, Pew Research Center, Brookings Institution, Urban Institute, Tax Policy Center, and official government statistics (BLS, Census Bureau, BEA, NIH, CDC).
+- Each source must directly support a specific claim in the reasoning.
+- Do NOT cite news articles, opinion pieces, campaign materials, or advocacy sites.
+- Do NOT fabricate URLs. A real citation without a URL is far better than a hallucinated link.`
+}
+
+export async function generateMapRecommendation(
+  contest: Contest,
+  stateName: string,
+  stateFips: string,
+): Promise<Omit<Recommendation, 'id' | 'user_id' | 'contest_id' | 'created_at'>> {
+  const client = getAnthropicClient()
+  const prompt = buildMapPrompt(contest, stateName, stateFips)
+
+  const message = await client.messages.create({
+    model: 'claude-sonnet-4-6',
+    max_tokens: 2048,
+    temperature: 0.2,
+    system:
+      'You are a nonpartisan civic research assistant. You NEVER use political identity labels. You reason from verifiable facts, policy details, and peer-reviewed research. You write in third person — never addressing the reader as "you".',
+    messages: [{ role: 'user', content: prompt }],
+  })
+
+  const content = message.content[0]
+  if (content.type !== 'text') throw new Error('Unexpected response type from Claude')
+
+  const raw = content.text.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim()
+
+  let parsed: {
+    recommendation: string
+    reasoning: string
+    sources: { title: string; url: string; citation: string; summary: string }[]
+    key_factors: string[]
+  }
+
+  try {
+    parsed = JSON.parse(raw)
+  } catch {
+    throw new Error(`Failed to parse Claude map response as JSON: ${raw.slice(0, 200)}`)
   }
 
   return {

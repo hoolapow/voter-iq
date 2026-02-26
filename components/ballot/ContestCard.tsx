@@ -14,24 +14,50 @@ interface ContestCardProps {
   contest: Contest
   cachedRecommendation: Recommendation | null
   isAuthenticated?: boolean
+  // Map-panel mode: skips DB lookup, uses public endpoint + state demographics
+  mapMode?: boolean
+  electionDate?: string  // ISO date; if in the past, show "election passed" instead
+  stateFips?: string
 }
 
-export function ContestCard({ contest, cachedRecommendation, isAuthenticated = true }: ContestCardProps) {
+export function ContestCard({
+  contest,
+  cachedRecommendation,
+  isAuthenticated = true,
+  mapMode = false,
+  electionDate,
+  stateFips,
+}: ContestCardProps) {
+  const isPastElection =
+    electionDate ? new Date(electionDate + 'T00:00:00') < new Date() : false
+
+  // In map mode we always fetch (no auth gate). In normal mode we only fetch if authenticated.
+  const shouldFetch = mapMode ? !isPastElection : isAuthenticated !== false
+
   const [recommendation, setRecommendation] = useState<Recommendation | null>(cachedRecommendation)
-  const [loading, setLoading] = useState(!cachedRecommendation && isAuthenticated !== false)
+  const [loading, setLoading] = useState(!cachedRecommendation && shouldFetch)
   const [error, setError] = useState<string | null>(null)
 
   const fetchRecommendation = useCallback(async () => {
-    if (!isAuthenticated) return
+    if (!shouldFetch) return
     if (recommendation) return
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch('/api/recommendations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contest_id: contest.id }),
-      })
+      let res: Response
+      if (mapMode) {
+        res = await fetch('/api/map/contest-recommendation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contest, stateFips }),
+        })
+      } else {
+        res = await fetch('/api/recommendations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contest_id: contest.id }),
+        })
+      }
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Failed to generate recommendation')
       setRecommendation(data.recommendation)
@@ -40,12 +66,11 @@ export function ContestCard({ contest, cachedRecommendation, isAuthenticated = t
     } finally {
       setLoading(false)
     }
-  }, [contest.id, recommendation, isAuthenticated])
+  }, [contest, recommendation, shouldFetch, mapMode, stateFips])
 
   useEffect(() => {
-    if (!isAuthenticated) return
     fetchRecommendation()
-  }, [fetchRecommendation, isAuthenticated])
+  }, [fetchRecommendation])
 
   const contestLabel =
     contest.contest_type === 'referendum'
@@ -54,13 +79,55 @@ export function ContestCard({ contest, cachedRecommendation, isAuthenticated = t
       ? 'Retention Vote'
       : 'Candidate Race'
 
-  // Find recommended candidate
   const recommendedCandidateName = recommendation
     ? (contest.candidates as Candidate[] | null)?.find((c) =>
         recommendation.recommendation.toLowerCase().includes(c.name.toLowerCase())
       )?.name
     : null
 
+  // ── Past election banner ────────────────────────────────────────────────────
+  if (mapMode && isPastElection) {
+    const dateStr = electionDate
+      ? new Date(electionDate + 'T00:00:00').toLocaleDateString('en-US', {
+          month: 'long', day: 'numeric', year: 'numeric',
+        })
+      : 'a past date'
+
+    return (
+      <Card>
+        <CardHeader>
+          <div className="min-w-0">
+            <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+              {contestLabel}
+            </span>
+            <h3 className="font-semibold text-gray-900 mt-0.5">
+              {contest.contest_type === 'referendum'
+                ? contest.referendum_question
+                : contest.office}
+            </h3>
+            {contest.district && (
+              <p className="text-sm text-gray-500 mt-0.5">{contest.district}</p>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          {contest.contest_type !== 'referendum' && contest.candidates && (
+            <div className="flex flex-col gap-2 mb-3">
+              {(contest.candidates as Candidate[]).map((c) => (
+                <CandidateCard key={c.name} candidate={c} isRecommended={false} />
+              ))}
+            </div>
+          )}
+          <div className="rounded-lg bg-gray-50 border border-gray-200 px-3 py-2.5 text-sm text-gray-600">
+            This election took place on <span className="font-medium">{dateStr}</span>.
+            Visit your state&apos;s official election authority website to view certified results.
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  // ── Normal / map upcoming ───────────────────────────────────────────────────
   return (
     <Card>
       <CardHeader>
@@ -79,7 +146,7 @@ export function ContestCard({ contest, cachedRecommendation, isAuthenticated = t
             )}
           </div>
 
-          {isAuthenticated === false ? (
+          {!mapMode && isAuthenticated === false ? (
             <Link
               href="/auth/login"
               className="text-xs text-indigo-600 hover:text-indigo-800 font-medium whitespace-nowrap"
@@ -94,7 +161,6 @@ export function ContestCard({ contest, cachedRecommendation, isAuthenticated = t
                   <span>Analyzing…</span>
                 </div>
               )}
-
               {!loading && recommendation && (
                 <RecommendationBadge
                   recommendation={recommendation.recommendation}
@@ -148,8 +214,10 @@ export function ContestCard({ contest, cachedRecommendation, isAuthenticated = t
           </div>
         )}
 
-        {/* Reasoning panel */}
-        {isAuthenticated !== false && recommendation && <ReasoningPanel recommendation={recommendation} />}
+        {/* Reasoning panel — always show in map mode; requires auth in normal mode */}
+        {(mapMode || isAuthenticated !== false) && recommendation && (
+          <ReasoningPanel recommendation={recommendation} />
+        )}
       </CardContent>
     </Card>
   )

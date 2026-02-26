@@ -15,6 +15,7 @@ interface CountyPanelProps {
 
 export function CountyPanel({ fips, countyName, isOpen, onClose, isAuthenticated }: CountyPanelProps) {
   const [elections, setElections] = useState<Election[]>([])
+  const [stateFips, setStateFips] = useState<string | undefined>(undefined)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -35,6 +36,7 @@ export function CountyPanel({ fips, countyName, isOpen, onClose, isAuthenticated
       .then((data) => {
         if (data.error) throw new Error(data.error)
         setElections(data.elections || [])
+        setStateFips(data.stateFips)
       })
       .catch((err) => {
         setError(err instanceof Error ? err.message : 'Failed to load contests')
@@ -135,7 +137,9 @@ export function CountyPanel({ fips, countyName, isOpen, onClose, isAuthenticated
                       key={contest.id}
                       contest={contest}
                       cachedRecommendation={null}
-                      isAuthenticated={isAuthenticated}
+                      mapMode={true}
+                      electionDate={election.election_date}
+                      stateFips={stateFips}
                     />
                   ))
                 ) : (
