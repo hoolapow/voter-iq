@@ -64,6 +64,7 @@ export async function GET(request: NextRequest) {
       if (!count || count === 0) {
         for (const contest of election.contests) {
           await service.from('ballot_contests').insert({
+            id: contest.id,
             election_id: upsertedElection.id,
             office: contest.office,
             contest_type: contest.contest_type,
