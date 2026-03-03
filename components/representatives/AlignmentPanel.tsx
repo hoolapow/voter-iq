@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { AlignmentScore } from '@/lib/types/representative.types'
 import { AlignmentBadge } from './AlignmentBadge'
 import { OutOfCharacterList } from './OutOfCharacterList'
@@ -14,6 +14,10 @@ export function AlignmentPanel({ representativeId, initialAlignment }: Alignment
   const [alignment, setAlignment] = useState<AlignmentScore | null>(initialAlignment)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!initialAlignment) generate()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function generate() {
     setLoading(true)
@@ -32,26 +36,6 @@ export function AlignmentPanel({ representativeId, initialAlignment }: Alignment
     }
   }
 
-  if (!alignment && !loading) {
-    return (
-      <div className="bg-gray-50 rounded-xl border border-gray-200 p-8 text-center">
-        <p className="text-gray-600 mb-4">
-          Generate a personalized alignment analysis based on your profile and this
-          legislator&apos;s voting record and bill sponsorships.
-        </p>
-        {error && (
-          <p className="text-red-600 text-sm mb-4">{error}</p>
-        )}
-        <button
-          onClick={generate}
-          className="bg-gray-900 text-white px-5 py-2.5 rounded-lg font-medium hover:bg-gray-700 transition-colors"
-        >
-          Generate Analysis
-        </button>
-      </div>
-    )
-  }
-
   if (loading) {
     return (
       <div className="bg-gray-50 rounded-xl border border-gray-200 p-8 text-center">
@@ -63,7 +47,13 @@ export function AlignmentPanel({ representativeId, initialAlignment }: Alignment
     )
   }
 
-  if (!alignment) return null
+  if (!alignment) {
+    return (
+      <div className="bg-gray-50 rounded-xl border border-gray-200 p-8 text-center">
+        <p className="text-red-600 text-sm">{error ?? 'Unable to load analysis.'}</p>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-8">
