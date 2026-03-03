@@ -295,6 +295,8 @@ export function getMockAlignment(
           description:
             'Voted YEA on SB 312 (Offshore Drilling Expansion Act) — inconsistent with 4 prior votes supporting clean energy legislation and 2 co-sponsored clean energy bills.',
           severity: 'notable',
+          context:
+            'This vote may reflect pressure from energy industry constituents in the district, or a negotiated compromise to secure votes for a separate clean energy bill. Legislators sometimes support targeted extraction projects in exchange for broader environmental protections elsewhere in the session.',
         },
       ]
     : [
@@ -304,6 +306,8 @@ export function getMockAlignment(
           description:
             'Voted YEA on SB 422 (Environmental Clean-Up Fund) — diverges from voting record of opposing 4 of 5 environmental regulation bills in this session.',
           severity: 'mild',
+          context:
+            'This may have been a bipartisan compromise vote — the Environmental Clean-Up Fund included provisions for local remediation projects that directly benefit the district\'s communities. Support for targeted cleanup funding is often politically easier than broader regulatory bills.',
         },
       ]
 

@@ -65,6 +65,7 @@ export interface OutOfCharacterFlag {
   item_id: string
   description: string
   severity: 'mild' | 'notable' | 'strong'
+  context?: string
 }
 
 export interface AlignmentScore {

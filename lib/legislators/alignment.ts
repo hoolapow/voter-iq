@@ -68,6 +68,7 @@ INSTRUCTIONS:
    - "mild": 1 divergent vote among 4–6 in the same policy area
    - "notable": votes against their own dominant direction in 3+ of 4+ votes in an area, or a primary-sponsored bill that contradicts consistent voting
    - "strong": explicit contradiction of a documented public position or party platform position
+   For each out-of-character flag, also provide a "context" field: 1–2 sentences speculating on plausible reasons why the legislator may have voted or acted this way (e.g., constituent pressure, bipartisan compromise, party deal, local economic interests, upcoming election cycle, committee assignments). Be balanced and charitable — frame it as possible explanations, not as fact.
 
 5. SUMMARY: Write 2–3 plain-English sentences summarizing overall alignment. Reference the voter's specific named preferences, not political identity.
 
@@ -82,7 +83,8 @@ Return exactly this JSON:
       "type": "vote" | "bill",
       "item_id": "string — use the bill number (e.g. HR 1234)",
       "description": "string — plain-English explanation of why this is anomalous: what the dominant pattern is and how this item diverges from it",
-      "severity": "mild" | "notable" | "strong"
+      "severity": "mild" | "notable" | "strong",
+      "context": "string — 1–2 sentences on plausible reasons why the legislator may have voted this way (constituent pressure, bipartisan deal, local economic interests, party leadership, election cycle timing, etc.). Frame as possible explanations, not fact."
     }
   ]
 }`
