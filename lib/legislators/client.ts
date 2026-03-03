@@ -5,9 +5,8 @@ import {
   getMockBillsForRepresentative,
 } from './mock'
 import { geocodeZip, zipToStateFallback } from './geocoder'
-import { fetchStateRepresentatives } from './openstates'
-import { fetchFederalRepresentatives } from './congress'
-import { fetchVotesForPerson, fetchBillsForPerson, findLegiscanPersonId } from './legiscan'
+import { fetchStateRepresentatives, fetchVotesForStateRep, fetchBillsForStateRep } from './openstates'
+import { fetchFederalRepresentatives, fetchFederalVotes, fetchFederalBills } from './congress'
 
 const USE_MOCK = process.env.USE_MOCK_LEGISLATOR_DATA !== 'false'
 
@@ -59,7 +58,8 @@ export async function getRepresentativeVotesAndBills(
   representativeExternalId: string,
   representativeName: string,
   state: string,
-  rawData: Record<string, unknown> | null
+  rawData: Record<string, unknown> | null,
+  source?: string
 ): Promise<{ votes: Omit<RepresentativeVote, 'id'>[]; bills: Omit<RepresentativeBill, 'id'>[] }> {
   if (USE_MOCK) {
     return {
@@ -68,24 +68,31 @@ export async function getRepresentativeVotesAndBills(
     }
   }
 
-  // Get or find LegiScan person ID
-  let legiscanPersonId: number | null = (rawData?.legiscan_person_id as number) ?? null
-
-  if (!legiscanPersonId) {
-    legiscanPersonId = await findLegiscanPersonId(representativeName, state)
+  if (source === 'openstates') {
+    // CA state reps: OpenStates GraphQL (votes) + REST (bills)
+    const [votes, bills] = await Promise.allSettled([
+      fetchVotesForStateRep(representativeId, representativeExternalId, state),
+      fetchBillsForStateRep(representativeId, representativeExternalId, state),
+    ])
+    return {
+      votes: votes.status === 'fulfilled' ? votes.value : [],
+      bills: bills.status === 'fulfilled' ? bills.value : [],
+    }
   }
 
-  if (!legiscanPersonId) {
-    return { votes: [], bills: [] }
+  if (source === 'congress') {
+    // Federal reps: ProPublica API
+    const bioguideId = representativeExternalId.replace('bioguide/', '')
+    const [votes, bills] = await Promise.allSettled([
+      fetchFederalVotes(representativeId, bioguideId, state),
+      fetchFederalBills(representativeId, bioguideId, state),
+    ])
+    return {
+      votes: votes.status === 'fulfilled' ? votes.value : [],
+      bills: bills.status === 'fulfilled' ? bills.value : [],
+    }
   }
 
-  const [votes, bills] = await Promise.allSettled([
-    fetchVotesForPerson(representativeId, legiscanPersonId, state),
-    fetchBillsForPerson(representativeId, legiscanPersonId, state),
-  ])
-
-  return {
-    votes: votes.status === 'fulfilled' ? votes.value : [],
-    bills: bills.status === 'fulfilled' ? bills.value : [],
-  }
+  console.warn(`getRepresentativeVotesAndBills: unknown source "${source}" for ${representativeName}`)
+  return { votes: [], bills: [] }
 }

@@ -56,7 +56,8 @@ export async function GET(
         rep.external_id,
         rep.name,
         rep.state,
-        rawData
+        rawData,
+        rep.source
       )
 
       if (votes.length > 0 || bills.length > 0) {
