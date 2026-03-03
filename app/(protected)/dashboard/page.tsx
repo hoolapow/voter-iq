@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { ElectionGrid } from '@/components/dashboard/ElectionGrid'
+import { RepresentativesSection } from '@/components/representatives/RepresentativesSection'
 
 export const dynamic = 'force-dynamic'
 
@@ -54,6 +55,18 @@ export default async function DashboardPage() {
       </div>
 
       <ElectionGrid />
+
+      <div className="mt-14">
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-gray-900">Your Representatives</h2>
+          <p className="mt-1 text-gray-600">
+            Elected officials currently serving
+            {profile?.zipcode ? ` ZIP code ${profile.zipcode}` : ' your area'}.
+            Click any representative to see their voting record and how well their actions align with your profile.
+          </p>
+        </div>
+        <RepresentativesSection />
+      </div>
     </div>
   )
 }

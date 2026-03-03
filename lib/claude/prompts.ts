@@ -6,7 +6,7 @@ import { getStateDemographicContext } from '@/lib/data/state-demographics'
 type DemographicRow = Database['public']['Tables']['survey_demographic']['Row']
 type ValuesRow = Database['public']['Tables']['survey_values']['Row']
 
-function formatDemographics(demo: DemographicRow): string {
+export function formatDemographics(demo: DemographicRow): string {
   const lines = [
     `Income Range: ${demo.income_range || 'Not specified'}`,
     `Employment: ${demo.employment_status?.replace(/_/g, ' ') || 'Not specified'}`,
@@ -32,7 +32,7 @@ function sliderPosition(val: number | null, leftLabel: string, rightLabel: strin
   return `Strongly prefers: ${rightLabel}`
 }
 
-function formatValues(values: ValuesRow): string {
+export function formatValues(values: ValuesRow): string {
   const importanceLabel = (v: number | null) =>
     v == null ? 'not specified' : v <= 2 ? 'low' : v === 3 ? 'moderate' : 'high'
 

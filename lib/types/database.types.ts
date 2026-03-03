@@ -307,6 +307,185 @@ export interface Database {
         Update: Record<string, never>
         Relationships: []
       }
+      representatives: {
+        Row: {
+          id: string
+          external_id: string
+          source: string
+          level: string
+          chamber: string | null
+          name: string
+          party: string | null
+          office: string
+          district: string | null
+          state: string
+          photo_url: string | null
+          website: string | null
+          email: string | null
+          phone: string | null
+          address: string | null
+          social_twitter: string | null
+          term_start: string | null
+          term_end: string | null
+          raw_data: Json | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          external_id: string
+          source: string
+          level: string
+          chamber?: string | null
+          name: string
+          party?: string | null
+          office: string
+          district?: string | null
+          state: string
+          photo_url?: string | null
+          website?: string | null
+          email?: string | null
+          phone?: string | null
+          address?: string | null
+          social_twitter?: string | null
+          term_start?: string | null
+          term_end?: string | null
+          raw_data?: Json | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          external_id?: string
+          source?: string
+          level?: string
+          chamber?: string | null
+          name?: string
+          party?: string | null
+          office?: string
+          district?: string | null
+          state?: string
+          photo_url?: string | null
+          website?: string | null
+          email?: string | null
+          phone?: string | null
+          address?: string | null
+          social_twitter?: string | null
+          term_start?: string | null
+          term_end?: string | null
+          raw_data?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      representative_votes: {
+        Row: {
+          id: string
+          representative_id: string
+          legiscan_bill_id: number
+          bill_number: string
+          bill_title: string
+          bill_url: string | null
+          vote_date: string
+          vote_choice: string
+          policy_area: string | null
+          session: string | null
+          state: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          representative_id: string
+          legiscan_bill_id: number
+          bill_number: string
+          bill_title: string
+          bill_url?: string | null
+          vote_date: string
+          vote_choice: string
+          policy_area?: string | null
+          session?: string | null
+          state: string
+          created_at?: string
+        }
+        Update: {
+          bill_title?: string
+          bill_url?: string | null
+          vote_choice?: string
+          policy_area?: string | null
+        }
+        Relationships: []
+      }
+      representative_bills: {
+        Row: {
+          id: string
+          representative_id: string
+          legiscan_bill_id: number
+          bill_number: string
+          bill_title: string
+          bill_url: string | null
+          status: string | null
+          status_date: string | null
+          sponsorship_type: string
+          policy_area: string | null
+          session: string | null
+          state: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          representative_id: string
+          legiscan_bill_id: number
+          bill_number: string
+          bill_title: string
+          bill_url?: string | null
+          status?: string | null
+          status_date?: string | null
+          sponsorship_type: string
+          policy_area?: string | null
+          session?: string | null
+          state: string
+          created_at?: string
+        }
+        Update: {
+          bill_title?: string
+          bill_url?: string | null
+          status?: string | null
+          status_date?: string | null
+          policy_area?: string | null
+        }
+        Relationships: []
+      }
+      representative_alignments: {
+        Row: {
+          id: string
+          user_id: string
+          representative_id: string
+          score: number
+          summary: string
+          key_alignments: Json | null
+          key_divergences: Json | null
+          out_of_character: Json | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          representative_id: string
+          score: number
+          summary: string
+          key_alignments?: Json | null
+          key_divergences?: Json | null
+          out_of_character?: Json | null
+          created_at?: string
+        }
+        Update: {
+          score?: number
+          summary?: string
+          key_alignments?: Json | null
+          key_divergences?: Json | null
+          out_of_character?: Json | null
+        }
+        Relationships: []
+      }
     }
     Views: Record<string, never>
     Functions: Record<string, never>
